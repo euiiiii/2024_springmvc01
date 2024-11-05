@@ -5,7 +5,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Insert title here</title>
+<title>Index 파일입니다.</title>
 <style type="text/css">
 	table{width: 600px; border-collapse: collapse;}
 	table, th, td{border: 1px solid red; text-align: center;}
