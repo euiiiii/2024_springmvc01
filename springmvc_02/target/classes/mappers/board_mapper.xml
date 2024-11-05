@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+ "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="board">
+	<select id="count" resultType="int">
+		select count(*) from board
+	</select>
+	
+	<select id="board_list" parameterType="Map" resultType="bovo">
+		select * from board order by b_group desc, b_lev asc limit #{limit} offset #{offset}
+	</select>
+	
+	<!-- b_group 값을 idx에 최대값 +1로 설정 -->
+	<insert id="board_insert" parameterType="bovo">
+		<selectKey keyProperty="b_group" resultType="String" order="BEFORE">
+			<!-- 현재 idx값이 없기 때문에 +1을 해줘야 함 => auto increment를 할 수 없기 때문에 이걸로 대신한다. -->
+			select(IFNULL(MAX(idx), 0)+1) as b_group from board
+		</selectKey>
+		insert into board(writer, title, content, pwd, hit, b_group, b_step, b_lev, regdate, f_name) 
+		values(#{writer}, #{title}, #{content}, #{pwd}, 0, #{b_group}, 0, 0, now(), #{f_name})
+		<!-- step과 level이 0, 0이면 원글이다 
+			 댓글이면 step과 level이 증가한다 
+			 숫자만큼 댓글의 댓글이 된다	 
+		-->
+	</insert>
+	
+	<update id="board_hit" parameterType="String">
+		update board set hit = hit+1 where idx=#{idx}
+	</update>
+	
+	<select id="board_detail" parameterType="String" resultType="bovo">
+		select * from board where idx=#{idx}
+	</select>
+	
+	<!-- 같은 b_group을 찾아서 기존 b_lev이 들어온 b_lev보다 크거나 같으면 기존 b_lev을 증가시키자 -->
+	<!-- <, 사용하면 오류나서 아래 두 가지 방법을 이용하여 오류 제거
+		1. ![[CDATA[부등호를 가지고 있는 내용]]> 사용 
+		2. &lt;는 < , &gt;는 >, >=는 &gt;=, <=는 &lt;=
+	-->
+	<!-- 첫 번째 댓글은 안 하고, 두 번째 댓글부터 b_lev을 증가시킨다 -->
+	<update id="ans_lev_up" parameterType="Map">
+		update board set b_lev=b_lev+1 
+		<![CDATA[
+		where b_group=#{b_group} and b_lev >= #{b_lev}
+		]]>
+	</update>
+	
+	<insert id="ans_insert" parameterType="bovo">
+		insert into board(writer, title, content, pwd, hit, b_group, b_step, b_lev, regdate, f_name) 
+		values(#{writer}, #{title}, #{content}, #{pwd}, 0, #{b_group}, #{b_step}, #{b_lev}, now(), #{f_name})
+	</insert>
+	
+	<update id="board_delete" parameterType="String">
+		update board set active=1 where idx=#{idx}
+	</update>
+	
+	<update id="board_update" parameterType="bovo">
+		update board set writer=#{writer}, title=#{title}, content=#{content}, f_name=#{f_name} 
+		where idx=#{idx}
+	</update>
+</mapper>
